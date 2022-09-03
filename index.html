@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" type="image/x-icon" href="/neo.png" />
+    <title>Matrix</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Liu+Jian+Mao+Cao&display=swap');
+
+      * {
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        display: flex;
+        overflow: hidden;
+        align-items: center;
+        justify-content: center;
+        background: #000;
+      }
+
+      main {
+        display: flex;
+        user-select: none;
+      }
+
+      p {
+        margin: 0;
+        line-height: 1;
+      }
+
+      span {
+        font-family: 'Liu Jian Mao Cao', cursive;
+        font-size: 1.3vmax;
+        display: block;
+        width: 2vmax;
+        height: 1.8vmax;
+        text-align: center;
+        color: #9bff9b11;
+      }
+    </style>
+  </head>
+  <body>
+    <main></main>
+
+    <script>
+      /* https://codepen.io/yuanchuan/pen/YoqWeR */
+      window.onload = setup
+
+      function setup() {
+        function r(from, to) {
+          return ~~(Math.random() * (to - from + 1) + from)
+        }
+
+        function getChar() {
+          const arr = '富强民主文明和谐自由平等公正法治爱国敬业诚信友善'.split(
+            '',
+          )
+          const index = Math.floor(Math.random() * arr.length)
+          return arr[index]
+        }
+
+        function loop(fn, delay) {
+          let stamp = Date.now()
+          function _loop() {
+            if (Date.now() - stamp >= delay) {
+              fn()
+              stamp = Date.now()
+            }
+            requestAnimationFrame(_loop)
+          }
+          requestAnimationFrame(_loop)
+        }
+
+        class Char {
+          constructor() {
+            this.element = document.createElement('span')
+            this.mutate()
+          }
+
+          mutate() {
+            this.element.textContent = getChar()
+          }
+        }
+
+        class Trail {
+          constructor(list = [], options) {
+            this.list = list
+            this.options = Object.assign({ size: 10, offset: 0 }, options)
+            this.body = []
+            this.move()
+          }
+
+          traverse(fn) {
+            this.body.forEach((n, i) => {
+              const last = i === this.body.length - 1
+              if (n) fn(n, i, last)
+            })
+          }
+
+          move() {
+            this.body = []
+            const { offset, size } = this.options
+            for (let i = 0; i < size; ++i) {
+              const item = this.list[offset + i - size + 1]
+              this.body.push(item)
+            }
+            this.options.offset = (offset + 1) % (this.list.length + size - 1)
+          }
+        }
+
+        class Rain {
+          constructor({ target, row }) {
+            this.element = document.createElement('p')
+            this.build(row)
+            if (target) {
+              target.appendChild(this.element)
+            }
+            this.drop()
+          }
+
+          build(row = 20) {
+            const root = document.createDocumentFragment()
+            const chars = []
+            for (let i = 0; i < row; ++i) {
+              const c = new Char()
+              root.appendChild(c.element)
+              chars.push(c)
+              if (Math.random() < 0.5) {
+                loop(() => c.mutate(), r(1e3, 5e3))
+              }
+            }
+            this.trail = new Trail(chars, {
+              size: r(10, 30),
+              offset: r(0, 100),
+            })
+            this.element.appendChild(root)
+          }
+
+          drop() {
+            const trail = this.trail
+            const len = trail.body.length
+            const delay = r(10, 100)
+
+            loop(() => {
+              trail.move()
+              trail.traverse((c, i, last) => {
+                c.element.style = `color: hsl(136, 100%, ${
+                  (85 / len) * (i + 1)
+                }%)`
+
+                if (last) {
+                  c.mutate()
+                  c.element.style = `
+                    color: hsl(136, 100%, 85%);
+                    text-shadow:
+                      0 0 .5em #fff,
+                      0 0 .5em currentColor;
+                `
+                }
+              })
+            }, delay)
+          }
+        }
+
+        const main = document.querySelector('main')
+        for (let i = 0; i < 50; ++i) {
+          new Rain({ target: main, row: 50 })
+        }
+      }
+    </script>
+  </body>
+</html>
